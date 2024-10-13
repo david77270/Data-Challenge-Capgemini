@@ -4,7 +4,13 @@ Welcome to the **Mines x Invent 2024 Data Challenge**! This repository is design
 
 ## 🏗️ Setup Instructions
 
-### 1. Create a Virtual Environment
+### 1. Clone the repo
+
+```console
+git clone https://github.com/LouisStefanuto/hackathon-mines-invent-2024.git
+```
+
+### 2. Create a Virtual Environment
 
 First, you'll need to create a Python virtual environment. Make sure you're using Python 3.12:
 
@@ -15,7 +21,7 @@ conda activate env_challenge
 
 > **Note:** For those familiar with Poetry, you can by-pass the Conda step. We add it to simplify the install.
 
-### 2. Install Dependencies
+### 3. Install Dependencies
 
 Next, install the required dependencies for the project:
 
@@ -23,6 +29,8 @@ Next, install the required dependencies for the project:
 pip install poetry
 poetry install --with dev
 ```
+
+For more information about Poetry, check out their [**documentation**](https://python-poetry.org).
 
 For more information about Poetry, check out their [**documentation**](https://python-poetry.org).
 
