@@ -145,3 +145,10 @@ DATA-MINI/
 
 # dataset creation notebook
 create_datasets.ipynb
+
+
+# DAVID
+poetry.lock
+test.ipynb
+checkpoints/
+ext
