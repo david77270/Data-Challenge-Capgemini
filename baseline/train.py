@@ -12,6 +12,7 @@ from baseline.model import SimpleSegmentationModel
 
 # NEW
 from baseline.models.unet.unet_model import UNet
+from baseline.utils.cleaning import remove_all_low_ndvi_images
 
 
 def print_iou_per_class(
@@ -29,7 +30,8 @@ def print_iou_per_class(
     """
 
     # Compute IoU for each class
-    # Note: I use this for loop to iterate also on classes not in the demo batch
+    # Note: I use this for loop to iterate also
+    # on classes not in the demo batch
 
     iou_per_class = []
     for class_id in range(nb_classes):
@@ -44,7 +46,9 @@ def print_iou_per_class(
     for class_id, iou in enumerate(iou_per_class):
         print(
             "class {} - IoU: {:.4f} - targets: {} - preds: {}".format(
-                class_id, iou, (targets == class_id).sum(), (preds == class_id).sum()
+                class_id, iou,
+                (targets == class_id).sum(),
+                (preds == class_id).sum()
             )
         )
 
@@ -62,10 +66,22 @@ def print_mean_iou(targets: torch.Tensor, preds: torch.Tensor) -> None:
     print(f"meanIOU (over existing classes in targets): {mean_iou:.4f}")
 
 
+def reduce_4D_to_3D(x: torch.Tensor) -> torch.Tensor:
+    """
+    Reduce a 4D tensor to 3D by taking the mean over the time dimension.
+
+    Args:
+        x (torch.Tensor): Input tensor of shape (B, T, H, W).
+
+    Returns:
+        torch.Tensor: Output tensor of shape (B, H, W).
+    """
+    return x.mean(dim=1)
+
+
 def train_model(
     data_folder: Path,
     nb_classes: int,
-    time_channels: int,
     input_channels: int,
     num_epochs: int = 10,
     batch_size: int = 4,
@@ -86,7 +102,7 @@ def train_model(
     )
 
     # Initialize the model, loss function, and optimizer
-    model = UNet(n_tchannels=time_channels, n_channels=input_channels, n_classes=nb_classes)
+    model = UNet(n_channels=input_channels, n_classes=nb_classes)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.RMSprop(model.parameters(),
                               lr=learning_rate,
@@ -104,17 +120,28 @@ def train_model(
         model.train()  # Set the model to training mode
         running_loss = 0.0
 
-        for i, (inputs, targets) in tqdm(enumerate(dataloader), total=len(dataloader)):
+        for _, (inputs, targets) in tqdm(
+            enumerate(dataloader), total=len(dataloader)
+        ):
+            # NEW - Remove images with low NDVI
+            ndvi_threshold = 0.3
+            inputs_red = remove_all_low_ndvi_images(
+                inputs, ndvi_threshold
+            )
+            # NEW - Drop the time dimension before feeding the data
+            inputs_red_3D = reduce_4D_to_3D(inputs_red)
+
             # Move data to device
-            inputs["S2"] = inputs["S2"].to(device)  # Satellite data
+            inputs_red_3D = inputs_red_3D.to(device)  # Satellite data
+
             targets = targets.to(device)
 
             # Zero the parameter gradients
             optimizer.zero_grad()
 
             # Forward pass
-            # outputs = model(inputs["S2"][:, 10, :, :, :])  # only use the 10th image
-            outputs = model(inputs["S2"])
+            # outputs = model(inputs["S2"][:, 10, :, :, :])  # only 10th img
+            outputs = model(inputs_red_3D)
 
             # Loss computation
             loss = criterion(outputs, targets)

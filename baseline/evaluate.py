@@ -7,7 +7,10 @@ from tqdm import tqdm
 from baseline.collate import pad_collate
 from baseline.dataset import BaselineDataset
 from baseline.model import SimpleSegmentationModel
-from baseline.train import print_iou_per_class, print_mean_iou
+from baseline.train import print_iou_per_class, print_mean_iou, reduce_4D_to_3D
+
+# NEW
+from baseline.utils.cleaning import remove_all_low_ndvi_images
 
 
 def evaluate_model(
@@ -45,14 +48,21 @@ def evaluate_model(
 
     # Disable gradient calculations for evaluation (reduces memory usage)
     with torch.no_grad():
-        for i, (inputs, targets) in tqdm(enumerate(test_dataloader),
+        for _, (inputs, targets) in tqdm(enumerate(test_dataloader),
                                          total=len(test_dataloader)):
+            # NEW - Remove images with low NDVI
+            ndvi_threshold = 0.3
+            inputs_red = remove_all_low_ndvi_images(
+                inputs, ndvi_threshold
+            )
+            # NEW - Drop the time dimension before feeding the data
+            inputs_red_3D = reduce_4D_to_3D(inputs_red)
+
             # Move data to device
-            inputs["S2"] = inputs["S2"].to(device)  # Satellite data
-            targets = targets.to(device)
+            inputs_red_3D = inputs_red_3D.to(device)  # Satellite data
 
             # Forward pass
-            outputs = model(inputs["S2"])
+            outputs = model(inputs_red_3D)
 
             # Loss computation
             loss = criterion(outputs, targets)
