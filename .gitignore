@@ -149,6 +149,6 @@ create_datasets.ipynb
 
 # DAVID
 poetry.lock
-*.ipynb
+test_old.ipynb
 checkpoints/
 ext
