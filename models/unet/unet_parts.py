@@ -5,6 +5,21 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class To3D(nn.Module):
+    """4D to 3D conversion"""
+
+    def __init__(self, in_channels):
+        super().__init__()
+        self.to_3D = nn.Sequential(
+            nn.Conv3d(in_channels, 1, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm3d(1),
+            nn.ReLU(inplace=True),
+        )
+
+    def forward(self, x):
+        return self.to_3D(x).squeeze(1)
+
+
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
 

@@ -10,6 +10,9 @@ from baseline.collate import pad_collate
 from baseline.dataset import BaselineDataset
 from baseline.model import SimpleSegmentationModel
 
+# NEW
+from baseline.models.unet.unet_model import UNet
+
 
 def print_iou_per_class(
     targets: torch.Tensor,
@@ -62,16 +65,20 @@ def print_mean_iou(targets: torch.Tensor, preds: torch.Tensor) -> None:
 def train_model(
     data_folder: Path,
     nb_classes: int,
+    time_channels: int,
     input_channels: int,
     num_epochs: int = 10,
     batch_size: int = 4,
     learning_rate: float = 1e-3,
-    device: str = "cpu",
+    weight_decay: float = 1e-8,
+    momentum: float = 0.999,
+    device: str = "cuda",
     verbose: bool = False,
 ) -> SimpleSegmentationModel:
     """
     Training pipeline.
     """
+
     # Create data loader
     dataset = BaselineDataset(data_folder)
     dataloader = torch.utils.data.DataLoader(
@@ -79,9 +86,14 @@ def train_model(
     )
 
     # Initialize the model, loss function, and optimizer
-    model = SimpleSegmentationModel(input_channels, nb_classes)
+    model = UNet(n_tchannels=time_channels, n_channels=input_channels, n_classes=nb_classes)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.RMSprop(model.parameters(),
+                              lr=learning_rate,
+                              weight_decay=weight_decay,
+                              momentum=momentum,
+                              foreach=True)
+    # optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     # Move the model to the appropriate device (GPU if available)
     device = torch.device(device)
@@ -101,7 +113,8 @@ def train_model(
             optimizer.zero_grad()
 
             # Forward pass
-            outputs = model(inputs["S2"][:, 10, :, :, :])  # only use the 10th image
+            # outputs = model(inputs["S2"][:, 10, :, :, :])  # only use the 10th image
+            outputs = model(inputs["S2"])
 
             # Loss computation
             loss = criterion(outputs, targets)
@@ -135,13 +148,14 @@ if __name__ == "__main__":
     # Example usage:
     model = train_model(
         data_folder=Path(
-            "/Users/louis.stefanuto.c/Documents/pastis-benchmark-mines2024/DATA/TRAIN/"
+            "/content/drive/MyDrive/hackathon-mines-invent-2024/MINIDATA/TRAIN"
         ),
+        time_channels=43,
         nb_classes=20,
         input_channels=10,
-        num_epochs=100,
-        batch_size=32,
+        num_epochs=1000,
+        batch_size=32,  # 32 for full dataset
         learning_rate=1e-3,
-        device="mps",
+        device="cuda",
         verbose=True,
     )
