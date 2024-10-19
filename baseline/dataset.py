@@ -53,6 +53,10 @@ class TestDataset(torch.utils.data.Dataset):
     def __init__(self, folder: Path):
         super(TestDataset, self).__init__()
         self.folder = folder
+        self.len = len(os.listdir(os.path.join(folder, "DATA_S2")))
+
+    def __len__(self) -> int:
+        return self.len
 
     def __getitem__(self, item: int) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
         id_patch = self.id_patches[item]
