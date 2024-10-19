@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from pathlib import Path
 from baseline.collate import pad_collate
-from baseline.dataset import BaselineDataset
+from baseline.dataset import TestDataset
 from baseline.model import SimpleSegmentationModel
 from baseline.train import reduce_4D_to_3D
 from baseline.utils.cleaning import remove_all_low_ndvi_images
@@ -38,7 +38,7 @@ def predict_model(
     model.to(device)
 
     # Create data loader for the test set
-    test_dataset = BaselineDataset(data_folder)
+    test_dataset = TestDataset(data_folder)
     test_dataloader = torch.utils.data.DataLoader(
         test_dataset, batch_size=batch_size, collate_fn=pad_collate
     )

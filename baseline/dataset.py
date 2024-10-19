@@ -47,3 +47,18 @@ class BaselineDataset(torch.utils.data.Dataset):
         target = torch.from_numpy(target[0].astype(int))
 
         return data, target
+
+
+class TestDataset(torch.utils.data.Dataset):
+    def __init__(self, folder: Path):
+        super(TestDataset, self).__init__()
+        self.folder = folder
+
+    def __getitem__(self, item: int) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
+        id_patch = self.id_patches[item]
+
+        # Open and prepare satellite data into T x C x H x W arrays
+        path_patch = os.path.join(self.folder, "DATA_S2", "S2_{}.npy".format(id_patch))
+        data = np.load(path_patch).astype(np.float32)
+        data = {"S2": torch.from_numpy(data)}
+        return data
