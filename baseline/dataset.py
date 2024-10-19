@@ -50,19 +50,40 @@ class BaselineDataset(torch.utils.data.Dataset):
 
 
 class TestDataset(torch.utils.data.Dataset):
+    """
+    Simply load the whole dataset for prediction.
+    It is in the "DATA_S2" folder which contains the satellite data.
+    """
+
     def __init__(self, folder: Path):
         super(TestDataset, self).__init__()
         self.folder = folder
-        self.len = len(os.listdir(os.path.join(folder, "DATA_S2")))
+
+        # Get metadata
+        print("Reading patch metadata ...")
+        # Now there's no metadata for the test dataset, so we get the IDs from the filenames
+        # which are formatted as "S2_{id}.npy" and are in the "DATA_S2" folder
+        self.meta_filenames = os.listdir(os.path.join(folder, "DATA_S2"))
+        self.meta_patch = [int(
+            f.split("_")[1].split(".")[0]
+            ) for f in self.meta_filenames]
+        self.meta_patch.sort()
+        print("Done.")
+
+        self.len = len(self.meta_patch)
+        print("Dataset ready.")
 
     def __len__(self) -> int:
         return self.len
 
-    def __getitem__(self, item: int) -> tuple[dict[str, torch.Tensor], torch.Tensor]:
-        id_patch = self.id_patches[item]
+    def __getitem__(self, item: int) -> dict[str, torch.Tensor]:
+        id_patch = self.meta_patch[item]
 
         # Open and prepare satellite data into T x C x H x W arrays
-        path_patch = os.path.join(self.folder, "DATA_S2", "S2_{}.npy".format(id_patch))
+        path_patch = os.path.join(
+            self.folder, "DATA_S2", "S2_{}.npy".format(id_patch)
+        )
         data = np.load(path_patch).astype(np.float32)
         data = {"S2": torch.from_numpy(data)}
+
         return data

@@ -50,10 +50,9 @@ def predict_model(
     stringified_predictions = []
 
     # Disable gradient calculations for evaluation (reduces memory usage)
-    # Disable gradient calculations for evaluation (reduces memory usage)
     with torch.no_grad():
-        for _, (inputs, _) in tqdm(enumerate(test_dataloader),
-                                   total=len(test_dataloader)):
+        for _, inputs in tqdm(enumerate(test_dataloader),
+                              total=len(test_dataloader)):
             # NEW - Remove images with low NDVI
             ndvi_threshold = 0.3
             inputs_red = remove_all_low_ndvi_images(
