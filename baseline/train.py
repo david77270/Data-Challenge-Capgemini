@@ -66,17 +66,19 @@ def print_mean_iou(targets: torch.Tensor, preds: torch.Tensor) -> None:
     print(f"meanIOU (over existing classes in targets): {mean_iou:.4f}")
 
 
-def reduce_4D_to_3D(x: torch.Tensor) -> torch.Tensor:
+def reduce_4D_to_3D(x: list[torch.Tensor]) -> torch.Tensor:
     """
     Reduce a 4D tensor to 3D by taking the mean over the time dimension.
 
     Args:
-        x (torch.Tensor): Input tensor of shape (B, T, H, W).
+        x (list[torch.Tensor]): List of B tensors of shape (T, C, H, W).
 
     Returns:
-        torch.Tensor: Output tensor of shape (B, H, W).
+        torch.Tensor: Output tensor of shape (B, C, H, W).
     """
-    return x.mean(dim=1)
+
+    x_3D = torch.stack([torch.mean(img, dim=0) for img in x])
+    return x_3D
 
 
 def train_model(
@@ -123,7 +125,7 @@ def train_model(
         for _, (inputs, targets) in tqdm(
             enumerate(dataloader), total=len(dataloader)
         ):
-            # NEW - Remove images with low NDVI
+            # NEW - Remove images with low NDVI (returns a list of tensors)
             ndvi_threshold = 0.3
             inputs_red = remove_all_low_ndvi_images(
                 inputs, ndvi_threshold

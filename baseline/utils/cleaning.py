@@ -68,7 +68,7 @@ def remove_all_low_ndvi_images(x, threshold):
     threshold: seuil NDVI à utiliser pour supprimer les images
 
     Returns:
-        x (torch.Tensor): Input tensor of shape (B, T, H, W).
+        x_new: Liste de séquences temporelles nettoyées.
     """
 
     x_new = []
@@ -79,7 +79,5 @@ def remove_all_low_ndvi_images(x, threshold):
             x, bid_ndvi_means, threshold, bid
         )
         x_new.append(valid_sequence)
-
-    x_new = torch.stack(x_new)
 
     return x_new
